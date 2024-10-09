@@ -196,6 +196,7 @@
                 attendanceCell.id = `attendance${index + 1}`;
                 attendanceCell.innerHTML = rowData.attendance;
 
+                // Set the cell's color based on attendance status
                 if (rowData.attendance === "Present") {
                     attendanceCell.style.backgroundColor = "#4CAF50";
                     attendanceCell.style.color = "white";
@@ -224,6 +225,12 @@
         let params = new URLSearchParams(url);
         return params.get(name);
     }
+
+    // Listen for changes in the contenteditable cells and save on each edit
+    document.querySelectorAll('#attendanceTable td[contenteditable="true"]').forEach(cell => {
+        cell.addEventListener('input', saveAttendanceToLocalStorage);
+    });
+
 </script>
 
 </body>
