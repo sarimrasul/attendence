@@ -31,11 +31,20 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        #searchBar {
+            margin-bottom: 20px;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
 
 <h2>Editable Attendance Table</h2>
+
+<input type="text" id="searchBar" placeholder="Search by name..." onkeyup="searchTable()">
 
 <table id="attendanceTable">
     <thead>
@@ -135,10 +144,18 @@
         alert("Link copied: " + link);
     }
 
-    function getParameterByName(name) {
-        let url = window.location.search;
-        let params = new URLSearchParams(url);
-        return params.get(name);
+    function searchTable() {
+        var input = document.getElementById("searchBar").value.toLowerCase();
+        var table = document.getElementById("attendanceTable");
+        var tr = table.getElementsByTagName("tr");
+
+        for (var i = 1; i < tr.length; i++) { // Skip header row
+            var td = tr[i].getElementsByTagName("td")[0]; // First column (Name)
+            if (td) {
+                var txtValue = td.textContent || td.innerText;
+                tr[i].style.display = txtValue.toLowerCase().indexOf(input) > -1 ? "" : "none";
+            }
+        }
     }
 
     function saveAttendanceToLocalStorage() {
@@ -151,7 +168,7 @@
             var classInfo = row.cells[1].innerText;
             var subject = row.cells[2].innerText;
             var attendance = row.cells[3].innerText;
-            attendanceData.push({name, classInfo, subject, attendance});
+            attendanceData.push({ name, classInfo, subject, attendance });
         }
 
         localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
@@ -163,7 +180,7 @@
             var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
             table.innerHTML = ''; // Clear the current table rows
 
-            attendanceData.forEach(function(rowData, index) {
+            attendanceData.forEach(function (rowData, index) {
                 var newRow = table.insertRow(-1);
                 var nameCell = newRow.insertCell(0);
                 var classCell = newRow.insertCell(1);
@@ -191,7 +208,7 @@
         }
     }
 
-    window.onload = function() {
+    window.onload = function () {
         // Load attendance data from localStorage
         loadAttendanceFromLocalStorage();
 
@@ -201,6 +218,12 @@
             markAttendance(markAttendanceParam);
         }
     };
+
+    function getParameterByName(name) {
+        let url = window.location.search;
+        let params = new URLSearchParams(url);
+        return params.get(name);
+    }
 </script>
 
 </body>
