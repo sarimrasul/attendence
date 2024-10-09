@@ -31,43 +31,39 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        .search-bar {
+            margin-bottom: 20px;
+        }
+
+        .editable-title {
+            background-color: #f2f2f2;
+            cursor: text;
+        }
     </style>
 </head>
 <body>
 
 <h2>Editable Attendance Table</h2>
 
+<div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search..." onkeyup="searchTable()">
+</div>
+
 <table id="attendanceTable">
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Class</th>
-            <th>Subject</th>
+            <th contenteditable="true" class="editable-title" onblur="updateColumnTitle('Name', this.innerText)">Name</th>
+            <th contenteditable="true" class="editable-title" onblur="updateColumnTitle('Class', this.innerText)">Class</th>
+            <th contenteditable="true" class="editable-title" onblur="updateColumnTitle('Subject', this.innerText)">Subject</th>
             <th>Attendance</th>
             <th>Action</th>
             <th>Copy Link</th>
             <th>Undo Attendance</th>
         </tr>
     </thead>
-    <tbody>
-        <tr>
-            <td contenteditable="true">John Doe</td>
-            <td contenteditable="true">10</td>
-            <td contenteditable="true">Math</td>
-            <td id="attendance1">Absent</td>
-            <td><a href="?markAttendance=1" id="markAttendance1">Mark Attendance</a></td>
-            <td><button onclick="copyLink(1)">Copy Link</button></td>
-            <td><button onclick="undoAttendance(1)">Undo Attendance</button></td>
-        </tr>
-        <tr>
-            <td contenteditable="true">Jane Smith</td>
-            <td contenteditable="true">11</td>
-            <td contenteditable="true">Science</td>
-            <td id="attendance2">Absent</td>
-            <td><a href="?markAttendance=2" id="markAttendance2">Mark Attendance</a></td>
-            <td><button onclick="copyLink(2)">Copy Link</button></td>
-            <td><button onclick="undoAttendance(2)">Undo Attendance</button></td>
-        </tr>
+    <tbody id="attendanceBody">
+        <!-- Rows will be populated here -->
     </tbody>
 </table>
 
@@ -76,57 +72,78 @@
 <button onclick="deleteRow()">Delete Last Row</button>
 
 <script>
-    function addRow() {
-        var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
-        var newRow = table.insertRow(-1);
-        var nameCell = newRow.insertCell(0);
-        var classCell = newRow.insertCell(1);
-        var subjectCell = newRow.insertCell(2);
-        var attendanceCell = newRow.insertCell(3);
-        var actionCell = newRow.insertCell(4);
-        var copyCell = newRow.insertCell(5);
-        var undoCell = newRow.insertCell(6);
+    // Load attendance from localStorage
+    function loadAttendance() {
+        const records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+        const tableBody = document.getElementById('attendanceBody');
+        tableBody.innerHTML = '';
 
-        nameCell.contentEditable = "true";
-        classCell.contentEditable = "true";
-        subjectCell.contentEditable = "true";
-        attendanceCell.id = `attendance${table.rows.length}`;
-        attendanceCell.innerHTML = "Absent";
+        records.forEach((record, index) => {
+            const newRow = tableBody.insertRow(-1);
+            const nameCell = newRow.insertCell(0);
+            const classCell = newRow.insertCell(1);
+            const subjectCell = newRow.insertCell(2);
+            const attendanceCell = newRow.insertCell(3);
+            const actionCell = newRow.insertCell(4);
+            const copyCell = newRow.insertCell(5);
+            const undoCell = newRow.insertCell(6);
+
+            nameCell.contentEditable = "true";
+            classCell.contentEditable = "true";
+            subjectCell.contentEditable = "true";
+            attendanceCell.innerText = record.attendance;
+
+            // Event listeners for saving changes
+            nameCell.onblur = () => updateCell(index, 'name', nameCell.innerText);
+            classCell.onblur = () => updateCell(index, 'class', classCell.innerText);
+            subjectCell.onblur = () => updateCell(index, 'subject', subjectCell.innerText);
+
+            actionCell.innerHTML = `<button onclick="markAttendance(${index})">Mark Attendance</button>`;
+            copyCell.innerHTML = `<button onclick="copyLink(${index})">Copy Link</button>`;
+            undoCell.innerHTML = `<button onclick="undoAttendance(${index})">Undo Attendance</button>`;
+        });
+    }
+
+    function addRow() {
+        const newRow = {
+            name: "New Name",
+            class: "New Class",
+            subject: "New Subject",
+            attendance: "Absent"
+        };
         
-        actionCell.innerHTML = `<a href="?markAttendance=${table.rows.length}" id="markAttendance${table.rows.length}">Mark Attendance</a>`;
-        copyCell.innerHTML = `<button onclick="copyLink(${table.rows.length})">Copy Link</button>`;
-        undoCell.innerHTML = `<button onclick="undoAttendance(${table.rows.length})">Undo Attendance</button>`;
-        
-        saveAttendanceToLocalStorage();
+        const records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+        records.push(newRow);
+        localStorage.setItem('attendanceRecords', JSON.stringify(records));
+        loadAttendance();
+    }
+
+    function markAttendance(index) {
+        const records = JSON.parse(localStorage.getItem('attendanceRecords'));
+        records[index].attendance = 'Present';
+        localStorage.setItem('attendanceRecords', JSON.stringify(records));
+        loadAttendance();
+    }
+
+    function undoAttendance(index) {
+        const records = JSON.parse(localStorage.getItem('attendanceRecords'));
+        records[index].attendance = 'Absent';
+        localStorage.setItem('attendanceRecords', JSON.stringify(records));
+        loadAttendance();
     }
 
     function deleteRow() {
-        var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
-        if (table.rows.length > 0) {
-            table.deleteRow(-1);
-            saveAttendanceToLocalStorage();
+        const records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+        if (records.length > 0) {
+            records.pop(); // Remove the last record
+            localStorage.setItem('attendanceRecords', JSON.stringify(records));
+            loadAttendance();
         }
     }
 
-    function markAttendance(rowId) {
-        var attendanceCell = document.getElementById(`attendance${rowId}`);
-        attendanceCell.innerHTML = "Present";
-        attendanceCell.style.backgroundColor = "#4CAF50";
-        attendanceCell.style.color = "white";
-        saveAttendanceToLocalStorage();
-    }
-
-    function undoAttendance(rowId) {
-        var attendanceCell = document.getElementById(`attendance${rowId}`);
-        attendanceCell.innerHTML = "Absent";
-        attendanceCell.style.backgroundColor = "";
-        attendanceCell.style.color = "";
-        saveAttendanceToLocalStorage();
-    }
-
-    function copyLink(rowId) {
-        var link = window.location.href.split('?')[0] + `?markAttendance=${rowId}`;
-        var tempInput = document.createElement("input");
+    function copyLink(index) {
+        const link = `${window.location.href}?attendanceId=${index}`;
+        const tempInput = document.createElement("input");
         document.body.appendChild(tempInput);
         tempInput.value = link;
         tempInput.select();
@@ -135,72 +152,39 @@
         alert("Link copied: " + link);
     }
 
-    function getParameterByName(name) {
-        let url = window.location.search;
-        let params = new URLSearchParams(url);
-        return params.get(name);
+    function updateCell(index, field, value) {
+        const records = JSON.parse(localStorage.getItem('attendanceRecords'));
+        records[index][field] = value;
+        localStorage.setItem('attendanceRecords', JSON.stringify(records));
     }
 
-    function saveAttendanceToLocalStorage() {
-        var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
-        var attendanceData = [];
-
-        for (var i = 0; i < table.rows.length; i++) {
-            var row = table.rows[i];
-            var name = row.cells[0].innerText;
-            var classInfo = row.cells[1].innerText;
-            var subject = row.cells[2].innerText;
-            var attendance = row.cells[3].innerText;
-            attendanceData.push({name, classInfo, subject, attendance});
-        }
-
-        localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+    function updateColumnTitle(oldTitle, newTitle) {
+        // This function is a placeholder since we won't be saving column titles to the backend.
+        console.log(`Column '${oldTitle}' updated to '${newTitle}'`);
     }
 
-    function loadAttendanceFromLocalStorage() {
-        var attendanceData = JSON.parse(localStorage.getItem('attendanceData'));
-        if (attendanceData) {
-            var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
-            table.innerHTML = ''; // Clear the current table rows
+    function searchTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('attendanceTable');
+        const rows = table.getElementsByTagName('tr');
 
-            attendanceData.forEach(function(rowData, index) {
-                var newRow = table.insertRow(-1);
-                var nameCell = newRow.insertCell(0);
-                var classCell = newRow.insertCell(1);
-                var subjectCell = newRow.insertCell(2);
-                var attendanceCell = newRow.insertCell(3);
-                var actionCell = newRow.insertCell(4);
-                var copyCell = newRow.insertCell(5);
-                var undoCell = newRow.insertCell(6);
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let found = false;
 
-                nameCell.contentEditable = "true";
-                classCell.contentEditable = "true";
-                subjectCell.contentEditable = "true";
-                attendanceCell.id = `attendance${index + 1}`;
-                attendanceCell.innerHTML = rowData.attendance;
-
-                if (rowData.attendance === "Present") {
-                    attendanceCell.style.backgroundColor = "#4CAF50";
-                    attendanceCell.style.color = "white";
+            for (let j = 0; j < cells.length - 3; j++) { // Ignore the last three columns (Attendance, Action, Copy Link, Undo Attendance)
+                if (cells[j].innerText.toLowerCase().includes(filter)) {
+                    found = true;
+                    break;
                 }
+            }
 
-                actionCell.innerHTML = `<a href="?markAttendance=${index + 1}" id="markAttendance${index + 1}">Mark Attendance</a>`;
-                copyCell.innerHTML = `<button onclick="copyLink(${index + 1})">Copy Link</button>`;
-                undoCell.innerHTML = `<button onclick="undoAttendance(${index + 1})">Undo Attendance</button>`;
-            });
+            rows[i].style.display = found ? '' : 'none';
         }
     }
 
-    window.onload = function() {
-        // Load attendance data from localStorage
-        loadAttendanceFromLocalStorage();
-
-        // Check for attendance marking via URL parameter
-        let markAttendanceParam = getParameterByName("markAttendance");
-        if (markAttendanceParam) {
-            markAttendance(markAttendanceParam);
-        }
-    };
+    window.onload = loadAttendance;
 </script>
 
 </body>
