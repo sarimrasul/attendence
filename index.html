@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editable Attendance Table</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button, a {
+            padding: 5px 10px;
+        }
+
+        .attendance {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Editable Attendance Table</h2>
+
+<table id="attendanceTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Class</th>
+            <th>Subject</th>
+            <th>Attendance</th>
+            <th>Action</th>
+            <th>Copy Link</th>
+            <th>Undo Attendance</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td contenteditable="true">John Doe</td>
+            <td contenteditable="true">10</td>
+            <td contenteditable="true">Math</td>
+            <td id="attendance1">Absent</td>
+            <td><a href="?markAttendance=1" id="markAttendance1">Mark Attendance</a></td>
+            <td><button onclick="copyLink(1)">Copy Link</button></td>
+            <td><button onclick="undoAttendance(1)">Undo Attendance</button></td>
+        </tr>
+        <tr>
+            <td contenteditable="true">Jane Smith</td>
+            <td contenteditable="true">11</td>
+            <td contenteditable="true">Science</td>
+            <td id="attendance2">Absent</td>
+            <td><a href="?markAttendance=2" id="markAttendance2">Mark Attendance</a></td>
+            <td><button onclick="copyLink(2)">Copy Link</button></td>
+            <td><button onclick="undoAttendance(2)">Undo Attendance</button></td>
+        </tr>
+    </tbody>
+</table>
+
+<br>
+<button onclick="addRow()">Add Row</button>
+<button onclick="deleteRow()">Delete Last Row</button>
+
+<script>
+    function addRow() {
+        var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
+        var newRow = table.insertRow(-1);
+        var nameCell = newRow.insertCell(0);
+        var classCell = newRow.insertCell(1);
+        var subjectCell = newRow.insertCell(2);
+        var attendanceCell = newRow.insertCell(3);
+        var actionCell = newRow.insertCell(4);
+        var copyCell = newRow.insertCell(5);
+        var undoCell = newRow.insertCell(6);
+
+        nameCell.contentEditable = "true";
+        classCell.contentEditable = "true";
+        subjectCell.contentEditable = "true";
+        attendanceCell.id = `attendance${table.rows.length}`;
+        attendanceCell.innerHTML = "Absent";
+        
+        actionCell.innerHTML = `<a href="?markAttendance=${table.rows.length}" id="markAttendance${table.rows.length}">Mark Attendance</a>`;
+        copyCell.innerHTML = `<button onclick="copyLink(${table.rows.length})">Copy Link</button>`;
+        undoCell.innerHTML = `<button onclick="undoAttendance(${table.rows.length})">Undo Attendance</button>`;
+    }
+
+    function deleteRow() {
+        var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
+        if (table.rows.length > 0) {
+            table.deleteRow(-1);
+        }
+    }
+
+    function markAttendance(rowId) {
+        var attendanceCell = document.getElementById(`attendance${rowId}`);
+        attendanceCell.innerHTML = "Present";
+        attendanceCell.style.backgroundColor = "#4CAF50";
+        attendanceCell.style.color = "white";
+    }
+
+    function undoAttendance(rowId) {
+        var attendanceCell = document.getElementById(`attendance${rowId}`);
+        attendanceCell.innerHTML = "Absent";
+        attendanceCell.style.backgroundColor = "";
+        attendanceCell.style.color = "";
+    }
+
+    function copyLink(rowId) {
+        var link = window.location.href.split('?')[0] + `?markAttendance=${rowId}`;
+        var tempInput = document.createElement("input");
+        document.body.appendChild(tempInput);
+        tempInput.value = link;
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        alert("Link copied: " + link);
+    }
+
+    function getParameterByName(name) {
+        let url = window.location.search;
+        let params = new URLSearchParams(url);
+        return params.get(name);
+    }
+
+    window.onload = function() {
+        let markAttendanceParam = getParameterByName("markAttendance");
+        if (markAttendanceParam) {
+            markAttendance(markAttendanceParam);
+        }
+    };
+</script>
+
+</body>
+</html>
