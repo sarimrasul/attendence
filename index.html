@@ -96,12 +96,15 @@
         actionCell.innerHTML = `<a href="?markAttendance=${table.rows.length}" id="markAttendance${table.rows.length}">Mark Attendance</a>`;
         copyCell.innerHTML = `<button onclick="copyLink(${table.rows.length})">Copy Link</button>`;
         undoCell.innerHTML = `<button onclick="undoAttendance(${table.rows.length})">Undo Attendance</button>`;
+        
+        saveAttendanceToLocalStorage();
     }
 
     function deleteRow() {
         var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
         if (table.rows.length > 0) {
             table.deleteRow(-1);
+            saveAttendanceToLocalStorage();
         }
     }
 
@@ -110,6 +113,7 @@
         attendanceCell.innerHTML = "Present";
         attendanceCell.style.backgroundColor = "#4CAF50";
         attendanceCell.style.color = "white";
+        saveAttendanceToLocalStorage();
     }
 
     function undoAttendance(rowId) {
@@ -117,6 +121,7 @@
         attendanceCell.innerHTML = "Absent";
         attendanceCell.style.backgroundColor = "";
         attendanceCell.style.color = "";
+        saveAttendanceToLocalStorage();
     }
 
     function copyLink(rowId) {
@@ -136,7 +141,61 @@
         return params.get(name);
     }
 
+    function saveAttendanceToLocalStorage() {
+        var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
+        var attendanceData = [];
+
+        for (var i = 0; i < table.rows.length; i++) {
+            var row = table.rows[i];
+            var name = row.cells[0].innerText;
+            var classInfo = row.cells[1].innerText;
+            var subject = row.cells[2].innerText;
+            var attendance = row.cells[3].innerText;
+            attendanceData.push({name, classInfo, subject, attendance});
+        }
+
+        localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+    }
+
+    function loadAttendanceFromLocalStorage() {
+        var attendanceData = JSON.parse(localStorage.getItem('attendanceData'));
+        if (attendanceData) {
+            var table = document.getElementById("attendanceTable").getElementsByTagName('tbody')[0];
+            table.innerHTML = ''; // Clear the current table rows
+
+            attendanceData.forEach(function(rowData, index) {
+                var newRow = table.insertRow(-1);
+                var nameCell = newRow.insertCell(0);
+                var classCell = newRow.insertCell(1);
+                var subjectCell = newRow.insertCell(2);
+                var attendanceCell = newRow.insertCell(3);
+                var actionCell = newRow.insertCell(4);
+                var copyCell = newRow.insertCell(5);
+                var undoCell = newRow.insertCell(6);
+
+                nameCell.contentEditable = "true";
+                classCell.contentEditable = "true";
+                subjectCell.contentEditable = "true";
+                attendanceCell.id = `attendance${index + 1}`;
+                attendanceCell.innerHTML = rowData.attendance;
+
+                if (rowData.attendance === "Present") {
+                    attendanceCell.style.backgroundColor = "#4CAF50";
+                    attendanceCell.style.color = "white";
+                }
+
+                actionCell.innerHTML = `<a href="?markAttendance=${index + 1}" id="markAttendance${index + 1}">Mark Attendance</a>`;
+                copyCell.innerHTML = `<button onclick="copyLink(${index + 1})">Copy Link</button>`;
+                undoCell.innerHTML = `<button onclick="undoAttendance(${index + 1})">Undo Attendance</button>`;
+            });
+        }
+    }
+
     window.onload = function() {
+        // Load attendance data from localStorage
+        loadAttendanceFromLocalStorage();
+
+        // Check for attendance marking via URL parameter
         let markAttendanceParam = getParameterByName("markAttendance");
         if (markAttendanceParam) {
             markAttendance(markAttendanceParam);
